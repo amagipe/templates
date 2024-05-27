@@ -1,0 +1,50 @@
+import boto3
+import time
+import json
+
+# Configuration
+QUEUE_URL = 'https://sqs.your-region.amazonaws.com/your-account-id/your-queue-name'
+REQUEST_ID_TO_FIND = 'your-request-id'
+POLL_INTERVAL = 10  # in seconds
+TOTAL_POLL_TIME = 15 * 60  # 15 minutes in seconds
+
+# Initialize SQS client
+sqs = boto3.client('sqs')
+
+def poll_sqs():
+    start_time = time.time()
+    while time.time() - start_time < TOTAL_POLL_TIME:
+        # Receive a message from the queue
+        response = sqs.receive_message(
+            QueueUrl=QUEUE_URL,
+            MaxNumberOfMessages=1,
+            WaitTimeSeconds=1
+        )
+        
+        if 'Messages' in response:
+            for message in response['Messages']:
+                try:
+                    # Parse the message body as JSON
+                    body = json.loads(message['Body'])
+                    
+                    # Check if the RequestId matches
+                    if body.get('RequestId') == REQUEST_ID_TO_FIND:
+                        print(f"Message found: {body}")
+                        
+                        # Delete the message from the queue
+                        sqs.delete_message(
+                            QueueUrl=QUEUE_URL,
+                            ReceiptHandle=message['ReceiptHandle']
+                        )
+                        print("Message deleted from the queue.")
+                        return
+                except json.JSONDecodeError:
+                    print("Failed to decode JSON from message body.")
+        
+        # Wait for the next poll interval
+        time.sleep(POLL_INTERVAL)
+    
+    print("Finished polling. Message not found.")
+
+if __name__ == "__main__":
+    poll_sqs()
