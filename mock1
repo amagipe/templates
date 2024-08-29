@@ -1,0 +1,59 @@
+When the `self.my_var` variable in the `__init__` function is set to an instance of another class (e.g., `self.my_var = MyOtherClass()`), and you want to mock this variable, you typically mock the class (`MyOtherClass`) so that it returns a mock object when instantiated.
+
+Here's how you can do it using `unittest.mock.patch`:
+
+### Example Setup
+
+Suppose you have the following classes:
+
+```python
+class MyOtherClass:
+    def some_method(self):
+        return 42
+
+class MyClass:
+    def __init__(self):
+        self.my_var = MyOtherClass()
+
+    def my_method(self):
+        return self.my_var.some_method() * 2
+```
+
+### Mocking the Dependency (`MyOtherClass`)
+
+You can mock `MyOtherClass` so that `self.my_var` in `MyClass` is set to a mock object:
+
+```python
+from unittest import TestCase
+from unittest.mock import patch, MagicMock
+
+class TestMyClass(TestCase):
+    @patch('path.to.MyOtherClass')  # Replace 'path.to.MyOtherClass' with the actual import path
+    def test_my_method(self, MockMyOtherClass):
+        # Create a mock instance of MyOtherClass
+        mock_instance = MockMyOtherClass.return_value
+        mock_instance.some_method.return_value = 100  # Mock the method
+        
+        obj = MyClass()  # MyClass will use the mocked MyOtherClass
+        result = obj.my_method()
+        
+        # Assert that the result is as expected
+        self.assertEqual(result, 200)  # 100 * 2
+        
+        # Assert that some_method was called once
+        mock_instance.some_method.assert_called_once()
+```
+
+### Explanation:
+
+1. **Patch the Class**: `@patch('path.to.MyOtherClass')` tells the test to replace `MyOtherClass` with a mock object when `MyClass` is instantiated.
+
+2. **Mock the Method**: `mock_instance.some_method.return_value = 100` sets the return value of the `some_method` to `100` when it is called within `MyClass`.
+
+3. **Instantiating MyClass**: When you create an instance of `MyClass`, it will automatically use the mocked `MyOtherClass`, and `self.my_var` will be a mock object.
+
+4. **Assertions**: You can then check if the method returns the expected value and verify that the mocked method was called as expected.
+
+### Summary
+
+By mocking the `MyOtherClass`, you effectively control the behavior of `self.my_var` within `MyClass`. This allows you to test `MyClass` in isolation without depending on the actual implementation of `MyOtherClass`.
