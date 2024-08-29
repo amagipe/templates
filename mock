@@ -1,0 +1,85 @@
+To mock a variable that is defined in the `__init__` method of a class, you typically use the `unittest.mock` library in Python. The idea is to patch the variable where it's used, or to replace the attribute on the instance of the class. Here's how you can do it:
+
+### 1. Mocking with `patch.object`
+
+If you want to mock the variable after the class has been instantiated, you can use `patch.object`. Here's an example:
+
+```python
+from unittest import TestCase
+from unittest.mock import patch
+
+class MyClass:
+    def __init__(self):
+        self.my_variable = 42
+
+    def my_method(self):
+        return self.my_variable * 2
+
+class TestMyClass(TestCase):
+    @patch.object(MyClass, 'my_variable', new=100)
+    def test_my_method(self):
+        obj = MyClass()
+        result = obj.my_method()
+        self.assertEqual(result, 200)  # 100 * 2
+
+```
+
+In this example, `my_variable` is mocked to return `100` instead of `42`.
+
+### 2. Mocking in the `__init__` method with `patch`
+
+If you want to mock the variable as the class is being instantiated, you can patch the variable inside the `__init__` method:
+
+```python
+from unittest import TestCase
+from unittest.mock import patch
+
+class MyClass:
+    def __init__(self):
+        self.my_variable = 42
+
+    def my_method(self):
+        return self.my_variable * 2
+
+class TestMyClass(TestCase):
+    @patch('path.to.MyClass.my_variable', new=100)
+    def test_my_method(self, mock_variable):
+        obj = MyClass()
+        result = obj.my_method()
+        self.assertEqual(result, 200)  # 100 * 2
+
+```
+
+In this approach, you replace the value of `my_variable` before the `__init__` method completes.
+
+### 3. Using `patch` with `__init__` dependencies
+
+If `my_variable` is initialized using an external dependency or function, you can mock the dependency directly:
+
+```python
+from unittest import TestCase
+from unittest.mock import patch
+
+class MyClass:
+    def __init__(self, dependency):
+        self.my_variable = dependency()
+
+    def my_method(self):
+        return self.my_variable * 2
+
+class TestMyClass(TestCase):
+    @patch('path.to.dependency_function', return_value=100)
+    def test_my_method(self, mock_dependency):
+        obj = MyClass()
+        result = obj.my_method()
+        self.assertEqual(result, 200)  # 100 * 2
+```
+
+In this case, `dependency_function` is mocked to return `100`, and as a result, `my_variable` is set to `100` during the `__init__` method execution.
+
+### Summary
+
+- **`patch.object`** is used to replace an attribute on an instance or class.
+- **`patch`** is used to replace dependencies or external functions that initialize your variable.
+
+This allows you to effectively test your classes while controlling the values of variables that are normally set during initialization.
