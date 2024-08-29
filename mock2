@@ -1,0 +1,65 @@
+You're correct in noticing that if the other class (`MyOtherClass`) is not properly mocked, the original class will be instantiated during the `__init__` method of `MyClass`. This often happens because of how Python imports work—if you directly import `MyOtherClass` into the module where `MyClass` is defined, you need to ensure that you're patching the class in the correct namespace.
+
+Let's correct the approach and ensure that `MyOtherClass` is properly mocked.
+
+### Corrected Approach
+
+The key here is to patch `MyOtherClass` in the same namespace where it is being used by `MyClass`. If `MyClass` is in a module called `my_module`, you need to patch `MyOtherClass` in `my_module`, like this:
+
+```python
+from unittest import TestCase
+from unittest.mock import patch, MagicMock
+
+class MyOtherClass:
+    def some_method(self):
+        return 42
+
+class MyClass:
+    def __init__(self):
+        self.my_var = MyOtherClass()
+
+    def my_method(self):
+        return self.my_var.some_method() * 2
+
+class TestMyClass(TestCase):
+    @patch('path.to.my_module.MyOtherClass')  # Replace 'path.to.my_module.MyOtherClass' with the actual path
+    def test_my_method(self, MockMyOtherClass):
+        # Mock the instance of MyOtherClass that will be created in MyClass
+        mock_instance = MockMyOtherClass.return_value
+        
+        # Define the behavior of the mock
+        mock_instance.some_method.return_value = 100
+        
+        # Now create an instance of MyClass; MyOtherClass is mocked
+        obj = MyClass()
+        
+        # Call the method you want to test
+        result = obj.my_method()
+        
+        # Assert the result is as expected
+        self.assertEqual(result, 200)  # 100 * 2
+        
+        # Verify that some_method was called once on the mock instance
+        mock_instance.some_method.assert_called_once()
+```
+
+### Explanation:
+
+1. **Patch the Correct Namespace**: 
+   - `@patch('path.to.my_module.MyOtherClass')` is crucial. You need to patch `MyOtherClass` in the namespace where `MyClass` is defined. 
+   - For instance, if `MyClass` and `MyOtherClass` are defined in a module called `my_module.py`, you must patch like this:
+     ```python
+     @patch('my_module.MyOtherClass')
+     ```
+
+2. **Mock Instance Creation**:
+   - `MockMyOtherClass.return_value` is the mock object that `MyClass` will use for `self.my_var`.
+   - By mocking `MyOtherClass`, `self.my_var` becomes a mock object, allowing you to control its behavior during the test.
+
+3. **Instantiate `MyClass`**:
+   - When you instantiate `MyClass`, it uses the mocked `MyOtherClass`, ensuring that the real `MyOtherClass` is not instantiated.
+
+4. **Assertions and Verification**:
+   - The test asserts that the `my_method` function behaves as expected and that the mock's `some_method` was called as expected.
+
+This method ensures that `MyOtherClass` is fully mocked when `MyClass` is tested, avoiding the instantiation of the actual class during the test.
