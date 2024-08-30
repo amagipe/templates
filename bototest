@@ -1,0 +1,87 @@
+To write a unit test for a function that makes a `boto3` API call, you should mock the `boto3` client to avoid making actual API calls during testing. This allows you to test the function's behavior under different scenarios, such as successful API calls and API failures.
+
+Let's say you have the following function:
+
+```python
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
+
+def get_s3_bucket_list():
+    try:
+        s3_client = boto3.client('s3')
+        response = s3_client.list_buckets()
+        return [bucket['Name'] for bucket in response['Buckets']]
+    except (BotoCoreError, ClientError) as e:
+        raise Exception(f"An error occurred: {str(e)}")
+```
+
+### Unit Test Example
+
+You can use the `unittest` framework along with `unittest.mock` to mock the `boto3` client.
+
+```python
+import unittest
+from unittest.mock import patch, MagicMock
+from botocore.exceptions import BotoCoreError, ClientError
+
+# Assuming your function is in a module named `my_module`
+# from my_module import get_s3_bucket_list
+
+class TestGetS3BucketList(unittest.TestCase):
+
+    @patch('boto3.client')
+    def test_get_s3_bucket_list_success(self, mock_boto_client):
+        # Mock the boto3 S3 client
+        mock_s3_client = MagicMock()
+        mock_boto_client.return_value = mock_s3_client
+        
+        # Mock the API response
+        mock_s3_client.list_buckets.return_value = {
+            'Buckets': [{'Name': 'test-bucket-1'}, {'Name': 'test-bucket-2'}]
+        }
+        
+        # Call the function
+        result = get_s3_bucket_list()
+        
+        # Assert the result
+        self.assertEqual(result, ['test-bucket-1', 'test-bucket-2'])
+        
+    @patch('boto3.client')
+    def test_get_s3_bucket_list_failure(self, mock_boto_client):
+        # Mock the boto3 S3 client
+        mock_s3_client = MagicMock()
+        mock_boto_client.return_value = mock_s3_client
+        
+        # Simulate an API error
+        mock_s3_client.list_buckets.side_effect = ClientError(
+            {"Error": {"Code": "500", "Message": "Internal Server Error"}}, "list_buckets"
+        )
+        
+        # Call the function and assert that it raises the expected exception
+        with self.assertRaises(Exception) as context:
+            get_s3_bucket_list()
+        
+        self.assertIn("An error occurred", str(context.exception))
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+### Explanation:
+
+1. **Patching**: 
+   - The `@patch('boto3.client')` decorator is used to replace the `boto3.client` call with a mock object during the test.
+   
+2. **Mocking Success**:
+   - In the `test_get_s3_bucket_list_success` test, we simulate a successful API call by mocking the `list_buckets` method to return a predefined response.
+   - We then verify that the function returns the expected list of bucket names.
+
+3. **Mocking Failure**:
+   - In the `test_get_s3_bucket_list_failure` test, we simulate an API failure by making the `list_buckets` method raise a `ClientError`.
+   - We check that the function raises an exception with the appropriate error message.
+
+4. **Assertions**:
+   - The `assertEqual` method checks that the function's output matches the expected result.
+   - The `assertRaises` method verifies that the function raises an exception when the API call fails.
+
+This approach ensures that the function's behavior is tested under different scenarios without relying on actual AWS resources.
