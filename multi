@@ -1,0 +1,86 @@
+To mock a function that returns multiple variables (e.g., `return var, var2, var3`), you can use the `return_value` argument of the `patch` decorator and set it to a tuple containing the values you want the mocked function to return.
+
+### Example Scenario
+
+Let's assume you have a function `load_config` that returns three values, and you use this function in a method of a class.
+
+### `config_loader.py` (Standalone Function)
+
+```python
+# config_loader.py
+
+def load_config(config_name):
+    # Imagine this function loads three configuration values based on the config_name
+    var1 = 42
+    var2 = "config_string"
+    var3 = True
+    return var1, var2, var3
+```
+
+### `my_module.py` (Class that Uses the Function)
+
+```python
+# my_module.py
+
+from config_loader import load_config
+
+class MyClass:
+    def process_data(self, data):
+        # Assume the function returns three values
+        multiplier, description, flag = load_config('multiplier')
+        if flag:
+            result = data * multiplier
+        else:
+            result = data
+        return result, description
+```
+
+### Unit Test Mocking a Function that Returns Multiple Values
+
+Here’s how to write a unit test for the `process_data` method:
+
+```python
+# test_my_module.py
+
+import unittest
+from unittest.mock import patch
+from my_module import MyClass
+
+class TestMyClass(unittest.TestCase):
+
+    @patch('my_module.load_config', return_value=(100, "mocked_description", True))
+    def test_process_data_with_mocked_load_config(self, mock_load_config):
+        # Instantiate the class
+        obj = MyClass()
+
+        # Call the method with some data
+        result, description = obj.process_data(10)
+        
+        # Assert the results
+        self.assertEqual(result, 1000)  # 10 * 100 = 1000
+        self.assertEqual(description, "mocked_description")  # Check the description
+        mock_load_config.assert_called_once_with('multiplier')
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+### Explanation:
+
+1. **Mocking a Function that Returns Multiple Values**:
+   - The `@patch('my_module.load_config', return_value=(100, "mocked_description", True))` decorator is used to mock the `load_config` function so that it returns a tuple `(100, "mocked_description", True)` instead of its actual return values.
+   - This tuple corresponds to `multiplier`, `description`, and `flag` as used in the `process_data` method.
+
+2. **Testing the `process_data` Method**:
+   - The test method `test_process_data_with_mocked_load_config` verifies that `process_data(10)` returns `1000` for the `result` (because `10 * 100 = 1000`) and `"mocked_description"` for the `description`.
+   - The `assert_called_once_with('multiplier')` ensures that `load_config` was called exactly once with the argument `'multiplier'`.
+
+### Running the Test:
+
+To execute the test, run:
+
+```bash
+python test_my_module.py
+```
+
+This setup ensures that your `process_data` method correctly handles multiple return values from the `load_config` function, and you can mock these return values in your tests to simulate different scenarios.
