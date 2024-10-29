@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "KeyA": {
+      "type": "string"
+    },
+    "nestedObject": {
+      "type": "object",
+      "properties": {
+        "KeyB": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "dependencies": {
+    "KeyA": {
+      "oneOf": [
+        {
+          "properties": {
+            "KeyA": {
+              "const": "ValueA"
+            }
+          },
+          "not": {
+            "properties": {
+              "nestedObject": {
+                "required": ["KeyB"]
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "KeyA": {
+              "not": {
+                "const": "ValueA"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
