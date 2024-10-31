@@ -1,0 +1,41 @@
+"""Calculator
+
+Usage:
+  calculator.py add <num1> <num2>
+  calculator.py subtract <num1> <num2>
+  calculator.py (-h | --help)
+
+Options:
+  -h --help     Show this screen.
+
+"""
+
+from docopt import docopt
+
+def calculate(operation, num1, num2):
+    """
+    Perform a basic calculation.
+
+    Parameters:
+        operation (str): The operation to perform ('add' or 'subtract').
+        num1 (float): The first number.
+        num2 (float): The second number.
+
+    Returns:
+        float: The result of the calculation.
+    """
+    if operation == "add":
+        return num1 + num2
+    elif operation == "subtract":
+        return num1 - num2
+    else:
+        raise ValueError("Unsupported operation")
+
+if __name__ == "__main__":
+    arguments = docopt(__doc__)
+    operation = "add" if arguments['add'] else "subtract"
+    num1 = float(arguments['<num1>'])
+    num2 = float(arguments['<num2>'])
+    
+    result = calculate(operation, num1, num2)
+    print(f"The result of {operation}ing {num1} and {num2} is {result}")
