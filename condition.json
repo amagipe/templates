@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "KeyA": {
+      "type": "string"
+    },
+    "KeyB": {
+      "type": "string"
+    },
+    "nestedObject": {
+      "type": "object",
+      "properties": {
+        "KeyC": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "KeyA": { "const": "ValueA" },
+          "KeyB": { "const": "ValueB" }
+        },
+        "required": ["KeyA", "KeyB"]
+      },
+      "then": {
+        "required": ["nestedObject"],
+        "properties": {
+          "nestedObject": {
+            "properties": {
+              "KeyC": { "type": "string" }
+            },
+            "required": ["KeyC"]
+          }
+        }
+      }
+    }
+  ]
+}
