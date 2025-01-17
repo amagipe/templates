@@ -1,0 +1,50 @@
+import boto3
+
+# Initialize the AppConfig client
+appconfig_client = boto3.client('appconfig')
+
+# Define your configuration details
+application_id = "app-123456"  # Replace with your Application ID
+configuration_profile_id = "cp-abcdef"  # Replace with your Configuration Profile ID
+content = {
+    "database": {
+        "host": "db.example.com",
+        "port": 5432,
+        "username": "db_user",
+        "password": "secure_password"
+    },
+    "features": {
+        "enableLogging": True,
+        "maxRetries": 5
+    },
+    "maintenanceMode": {
+        "enabled": False,
+        "startTime": None,
+        "endTime": None
+    }
+}
+content_type = "application/json"  # Adjust if you're using another format
+description = "Initial configuration for the app"
+
+# Convert content to JSON string
+import json
+content_json = json.dumps(content)
+
+try:
+    # Call the create_hosted_configuration_version API
+    response = appconfig_client.create_hosted_configuration_version(
+        ApplicationId=application_id,
+        ConfigurationProfileId=configuration_profile_id,
+        Content=content_json,
+        ContentType=content_type,
+        Description=description
+    )
+    
+    # Print the response
+    print("Hosted configuration version created successfully!")
+    print("Version details:")
+    print(json.dumps(response, indent=4))
+
+except Exception as e:
+    print("Error creating hosted configuration version:")
+    print(e)
